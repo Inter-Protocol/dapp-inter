@@ -11,6 +11,7 @@ import {
   vaultToAdjustAtom,
   debtInputValueAtom,
   collateralInputValueAtom,
+  autoRepayDebtAtom,
 } from 'store/adjustVault';
 import { displayFunctionsAtom, pursesAtom } from 'store/app';
 import ErrorWarning from 'svg/error-warning';
@@ -35,6 +36,7 @@ const AdjustVaultForm = () => {
 
   const [debtAction, setDebtAction] = useAtom(debtActionAtom);
   const [collateralAction, setCollateralAction] = useAtom(collateralActionAtom);
+  const [autoRepayDebt, setAutoRepayDebt] = useAtom(autoRepayDebtAtom);
 
   const setDebtInputValue = useSetAtom(debtInputValueAtom);
   const setCollateralInputValue = useSetAtom(collateralInputValueAtom);
@@ -186,6 +188,17 @@ const AdjustVaultForm = () => {
               actionLabel={debtAction === DebtAction.Mint ? 'Max' : undefined}
               onAction={onMaxDebtClicked}
             />
+            <div className="mt-4">
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  className="form-checkbox"
+                  checked={autoRepayDebt}
+                  onChange={() => setAutoRepayDebt(!autoRepayDebt)}
+                />
+                <span className="ml-2">Automatically repay debt from collateral</span>
+              </label>
+            </div>
           </div>
         </div>
         {isActive && (
