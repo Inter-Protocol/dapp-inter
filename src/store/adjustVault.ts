@@ -176,6 +176,8 @@ export const debtActionAtom = atom(
   },
 );
 
+export const autoRepayDebtAtom = atom(false);
+
 type VaultAfterAdjustment = {
   newDebt: Amount<'nat'>;
   newLocked: Amount<'nat'>;
@@ -193,21 +195,29 @@ export const vaultAfterAdjustmentAtom = atom<VaultAfterAdjustment | null>(
     const collateralAction = get(collateralActionAtom);
     const collateralInputAmount = get(collateralInputAmountAtom);
     const debtInputAmount = get(debtInputAmountAtom);
+    const autoRepayDebt = get(autoRepayDebtAtom);
 
     const { totalDebt, locked, params, collateralPrice } = vaultToAdjust;
 
-    const newDebt = debtAfterChange(
+    let newDebt = debtAfterChange(
       debtAction,
       params.mintFee,
       totalDebt,
       debtInputAmount,
     );
 
-    const newLocked = lockedAfterChange(
+    let newLocked = lockedAfterChange(
       collateralAction,
       locked,
       collateralInputAmount,
     );
+
+    if (debtAction === DebtAction.Repay && autoRepayDebt) {
+      const debtToRepay = debtInputAmount || AmountMath.makeEmpty(totalDebt.brand);
+      const collateralToSell = ceilMultiplyBy(debtToRepay, makeRatioFromAmounts(collateralPrice.amountIn, collateralPrice.amountOut));
+      newDebt = AmountMath.subtract(newDebt, debtToRepay);
+      newLocked = AmountMath.subtract(newLocked, collateralToSell);
+    }
 
     const newLockedPrice = floorMultiplyBy(
       newLocked,
@@ -241,6 +251,7 @@ export const adjustVaultErrorsAtom = atom(get => {
   const collateralAction = get(collateralActionAtom);
   const collateralInputAmount = get(collateralInputAmountAtom);
   const debtInputAmount = get(debtInputAmountAtom);
+  const autoRepayDebt = get(autoRepayDebtAtom);
 
   const { params, metrics, totalDebt } = vaultToAdjust;
   const { newCollateralizationRatio, newDebt, newLocked } =
@@ -269,6 +280,7 @@ export const adjustVaultErrorsAtom = atom(get => {
   if (
     debtAction === DebtAction.Repay &&
     debtInputAmount?.value &&
+    !autoRepayDebt &&
     (!debtPurseAmount || !AmountMath.isGTE(debtPurseAmount, debtInputAmount))
   ) {
     debtError = 'Insufficient funds.';

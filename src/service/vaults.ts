@@ -492,6 +492,7 @@ type AdjustParams = {
   collateral?: { amount: Amount<'nat'>; action: CollateralAction };
   debt?: { amount: Amount<'nat'>; action: DebtAction };
   onSuccess?: () => void;
+  autoRepayDebt?: boolean;
 };
 
 export const makeAdjustVaultOffer = async ({
@@ -499,6 +500,7 @@ export const makeAdjustVaultOffer = async ({
   collateral,
   debt,
   onSuccess,
+  autoRepayDebt,
 }: AdjustParams) => {
   const { chainConnection } = appStore.getState();
   assert(chainConnection);
@@ -520,7 +522,7 @@ export const makeAdjustVaultOffer = async ({
   if (debt?.action === DebtAction.Mint) {
     proposal.want.Minted = debt.amount;
   }
-  if (debt?.action === DebtAction.Repay) {
+  if (debt?.action === DebtAction.Repay && !autoRepayDebt) {
     proposal.give.Minted = debt.amount;
   }
 
